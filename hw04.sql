@@ -97,34 +97,22 @@ WHERE customer_id IS NOT NULL;
 
 --15. Для каждого отдела — количество сотрудников, средняя зарплата, суммарная сумма заказов (через сотрудников этого отдела).
 
---Признаюсь что не осилил задачу
-WITH EmpStats AS (
-  SELECT
-    d.id AS dept_id,
-    d.name AS dept_name,
-    COUNT(e.id) AS employee_count,
-    COALESCE(AVG(e.salary), 0) AS average_salary
-  FROM departments d
-  LEFT JOIN employees e ON d.id = e.department_id
-  GROUP BY d.id, d.name
-),
-OrderStats AS (
-  SELECT
-    e.department_id AS dept_id,
-    COALESCE(SUM(o.amount), 0) AS total_order_amount
-  FROM employees e
-  JOIN orders o ON e.id = o.employee_id
-  WHERE e.department_id IS NOT NULL
-  GROUP BY e.department_id
-)
 SELECT
-  es.dept_name,
-  es.employee_count,
-  es.average_salary,
-  COALESCE(os.total_order_amount, 0) AS total_order_amount
-FROM EmpStats es
-LEFT JOIN OrderStats os ON es.dept_id = os.dept_id
-ORDER BY es.dept_name;
+    departments.name,
+    COUNT(employees.id) emp_count,
+    COALESCE(ROUND(AVG(employees.salary), 2), 0) as average_salary,
+    COALESCE(rs.total, 0) as total_sum_orders
+FROM departments
+LEFT JOIN employees ON departments.id = employees.department_id
+LEFT JOIN (
+  SELECT
+  	employees.department_id,
+  	SUM(orders.amount) as total
+  FROM employees
+  JOIN orders ON employees.id = orders.employee_id
+  GROUP BY employees.department_id
+) AS rs ON departments.id = rs.department_id
+GROUP BY departments.id, departments.name, total_sum_orders
 
 --16. Найти клиентов, чья средняя сумма заказа выше средней по всем заказам.
 
